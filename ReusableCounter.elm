@@ -8,9 +8,9 @@ import Html.Events exposing (onClick)
 -- MODEL
 
 type alias CounterModel =
-    { currentCount : Int
-    , refID : CounterID
-    }
+  { currentCount : Int
+  , refID : CounterID
+  }
 
 type alias CounterID = Int
 
@@ -20,16 +20,21 @@ newCounter refID = CounterModel 0 refID
 -- CONFIG
 
 type Config msg =
-    Config
-        { modifyMsg : (CounterModifier -> Int -> msg)
-        , removeMsg : msg
-        }
+  Config
+    { modifyMsg : (CounterModifier -> CounterID -> msg)
+    , removeMsg : (CounterID -> msg)
+    }
 
+config
+  : { modifyMsg : (CounterModifier -> CounterID -> msg)
+    , removeMsg : (CounterID -> msg)
+    }
+  -> Config msg
 config { modifyMsg, removeMsg } =
-    Config
-        { modifyMsg = modifyMsg
-        , removeMsg = removeMsg
-        }
+  Config
+    { modifyMsg = modifyMsg
+    , removeMsg = removeMsg
+    }
 
 -- UPDATE
 
@@ -52,7 +57,7 @@ viewCounter (Config { modifyMsg, removeMsg }) counterModel =
     , div [ countStyle ] [ text (toString counterModel.currentCount) ]
     , button [ onClick (modifyMsg Increment counterModel.refID) ] [ text "+" ]
     , button [ onClick (modifyMsg Clear counterModel.refID) ] [ text "Clear" ]
-    , button [ onClick removeMsg ] [ text "Remove" ]
+    , button [ onClick (removeMsg counterModel.refID) ] [ text "Remove" ]
     ]
 
 countStyle : Attribute msg
