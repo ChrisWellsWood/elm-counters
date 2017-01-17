@@ -1,3 +1,4 @@
+import Dict
 import Html exposing (..)
 import Html.Events exposing (onClick)
 
@@ -17,13 +18,17 @@ init = ( emptyModel, Cmd.none )
 -- MODEL
 
 type alias Model =
-  { counterList : List CounterModel
+  { counterDict : CounterDict
   , currentCounterID : CounterID
   }
 
+type alias CounterDict = Dict.Dict CounterID CounterModel
+
+type alias CounterID = Int
+
 emptyModel : Model
 emptyModel =
-  { counterList = []
+  { counterDict = Dict.empty
   , currentCounterID = 0
   }
 
@@ -33,7 +38,7 @@ emptyModel =
 
 type Msg 
   = AddCounter
-  | ModifyCounter CounterModifier CounterID
+  | ModifyCounter CounterID CounterModifier
   | RemoveCounter CounterID
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -43,30 +48,26 @@ update action model =
       let
         nextID = model.currentCounterID + 1
         newModel =
-          { counterList = ( newCounter nextID ) :: model.counterList
+          { counterDict = Dict.insert nextID 0 model.counterDict
           , currentCounterID = nextID
           }
       in
         ( newModel, Cmd.none )
     
-    ModifyCounter modifier counterID ->
+    ModifyCounter counterID modifier ->
       let
-        counterList = List.map (updateCounterList modifier counterID) model.counterList
+        clickedCounter = Dict.get counterID model.counterDict
       in
-        ( { model | counterList = counterList }, Cmd.none )
+        case clickedCounter of
+          Just counter ->
+            ( { model | counterDict =
+              Dict.insert counterID (modifyCounter modifier counter) model.counterDict }
+            , Cmd.none )
+          Nothing ->
+            ( model, Cmd.none )
     
     RemoveCounter counterID ->
-      let
-        counterList = List.filter (\cntr -> cntr.refID /= counterID) model.counterList
-      in
-        ( { model | counterList = counterList }, Cmd.none )
-
-updateCounterList : CounterModifier -> CounterID -> CounterModel -> CounterModel
-updateCounterList modifier targetID counter =
-  if targetID == counter.refID then
-    modifyCounter modifier counter
-  else
-    counter
+        ( { model | counterDict = Dict.remove counterID model.counterDict }, Cmd.none )
 
 -- VIEW
 
@@ -74,15 +75,16 @@ view : Model -> Html Msg
 view model =
   div []
     [ div [] [ button [ onClick AddCounter ] [ text "Add Counter" ] ]
-    , div [] (List.map makeView model.counterList)
+    , div [] (List.map makeView (Dict.toList model.counterDict))
     ]
 
-counterConfig : Config Msg
-counterConfig =
-  config
-    { modifyMsg = ModifyCounter
-    , removeMsg = RemoveCounter
-    }
-
-makeView : CounterModel -> Html Msg
-makeView counterModel = viewCounter counterConfig counterModel
+makeView : (CounterID, CounterModel) -> Html Msg
+makeView (refID, counterModel) = 
+  let
+    counterConfig =
+      config
+        { modifyMsg = ModifyCounter refID
+        , removeMsg = RemoveCounter refID
+        }
+  in
+    viewCounter counterConfig counterModel

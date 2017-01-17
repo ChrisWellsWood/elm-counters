@@ -7,27 +7,19 @@ import Html.Events exposing (onClick)
 
 -- MODEL
 
-type alias CounterModel =
-  { currentCount : Int
-  , refID : CounterID
-  }
-
-type alias CounterID = Int
-
-newCounter : CounterID -> CounterModel
-newCounter refID = CounterModel 0 refID
+type alias CounterModel = Int
 
 -- CONFIG
 
 type Config msg =
   Config
-    { modifyMsg : (CounterModifier -> CounterID -> msg)
-    , removeMsg : (CounterID -> msg)
+    { modifyMsg : (CounterModifier -> msg)
+    , removeMsg : msg
     }
 
 config
-  : { modifyMsg : (CounterModifier -> CounterID -> msg)
-    , removeMsg : (CounterID -> msg)
+  : { modifyMsg : (CounterModifier -> msg)
+    , removeMsg : msg
     }
   -> Config msg
 config { modifyMsg, removeMsg } =
@@ -43,9 +35,9 @@ type CounterModifier = Increment | Decrement | Clear
 modifyCounter : CounterModifier -> CounterModel -> CounterModel
 modifyCounter counterModifier counterModel =
   case counterModifier of
-    Increment -> { counterModel | currentCount = counterModel.currentCount + 1 }
-    Decrement -> { counterModel | currentCount = counterModel.currentCount - 1 }
-    Clear -> { counterModel | currentCount = 0 }
+    Increment -> counterModel + 1
+    Decrement -> counterModel - 1
+    Clear -> 0
 
 
 -- VIEW
@@ -53,11 +45,11 @@ modifyCounter counterModifier counterModel =
 viewCounter : Config msg -> CounterModel -> Html msg
 viewCounter (Config { modifyMsg, removeMsg }) counterModel =
   div []
-    [ button [ onClick (modifyMsg Decrement counterModel.refID) ] [ text "-" ]
-    , div [ countStyle ] [ text (toString counterModel.currentCount) ]
-    , button [ onClick (modifyMsg Increment counterModel.refID) ] [ text "+" ]
-    , button [ onClick (modifyMsg Clear counterModel.refID) ] [ text "Clear" ]
-    , button [ onClick (removeMsg counterModel.refID) ] [ text "Remove" ]
+    [ button [ onClick (modifyMsg Decrement) ] [ text "-" ]
+    , div [ countStyle ] [ text (toString counterModel) ]
+    , button [ onClick (modifyMsg Increment) ] [ text "+" ]
+    , button [ onClick (modifyMsg Clear) ] [ text "Clear" ]
+    , button [ onClick (removeMsg) ] [ text "Remove" ]
     ]
 
 countStyle : Attribute msg
